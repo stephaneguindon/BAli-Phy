@@ -567,8 +567,8 @@ int reg_heap::incremental_evaluate_unchangeable_(int R)
 	    try
 	    {
 		closure_stack.push_back( access(R).C );
-		RegOperationArgsUnchangeable Args(*this);
-		closure value = (*O)(Args);
+		incremental_evaluate_from_call_unchangeable();
+		closure value = closure_stack.back();
 		closure_stack.pop_back();
 		total_reductions++;
 	
@@ -576,6 +576,7 @@ int reg_heap::incremental_evaluate_unchangeable_(int R)
 	    }
 	    catch (no_context&)
 	    {
+		access(R).C = closure_stack.back();
 		closure_stack.pop_back();
 		access(R).type = reg::type_t::changeable;
 		return R;
@@ -601,3 +602,39 @@ int reg_heap::incremental_evaluate_unchangeable_(int R)
     return R;
 }
 
+void reg_heap::incremental_evaluate_from_call_unchangeable()
+{
+    assert(is_completely_dirty(root_token));
+
+    while (not closure_stack.back().exp.head().is_index_var() and not is_WHNF(closure_stack.back().exp))
+    {
+#ifndef NDEBUG
+	assert(not closure_stack.back().exp.head().is_a<Trim>());
+	assert(closure_stack.back().exp.type() != parameter_type);
+#endif
+
+	try
+	{
+	    RegOperationArgsUnchangeable Args(*this);
+	    auto O = closure_stack.back().exp.head().assert_is_a<Operation>()->op;
+	    closure_stack.back() = (*O)(Args);
+
+	    total_reductions++;
+	}
+        // Don't catch no_context& here.  Catch it in incremental_evaluate_unchangeable( ), which calls this.
+	catch (no_context& nc)
+	{
+	    throw nc;
+	}
+	catch (myexception& e)
+	{
+	    throw_reg_exception(*this, root_token, closure_stack.back(), e);
+	}
+	catch (const std::exception& ee)
+	{
+	    myexception e;
+	    e<<ee.what();
+	    throw_reg_exception(*this, root_token, closure_stack.back(), e);
+	}
+    }
+}
