@@ -44,20 +44,41 @@ expression_ref graph_normalize(const expression_ref& E)
 	for(int i=0;i<L;i++)
 	    V->sub[2+2*i] = graph_normalize(V->sub[2+2*i]);
     
-	if (is_reglike(V->sub[0]))
-	    return object_ptr<const expression>(V);
-	else
-	{
-	    int var_index = get_safe_binder_index(E);
-	    expression_ref x = dummy(var_index);
-	    expression_ref obj = V->sub[0];
-	    V->sub[0] = x;
 
-	    return let_expression(x,obj,V);
-	}
+	return object_ptr<const expression>(V);
     }
 
-    // 4. Constructor
+    // 3. Apply
+    if (E.head().is_a<Apply>())
+    {
+	int var_index = get_safe_binder_index(E);
+
+	object_ptr<expression> E2 = E.as_expression().clone();
+
+	// Actually we probably just need x[i] not to be free in E.sub()[i]
+	vector<expression_ref> vars;
+	vector<expression_ref> bodies;
+	for(int i=0;i<E2->size();i++)
+	{
+	    E2->sub[i] = graph_normalize(E.sub()[i]);
+
+	    if (i > 0 and not is_reglike(E2->sub[i]))
+	    {
+		expression_ref var = dummy( var_index++ );
+
+		// 1. Let-bind the argument expression
+		vars.push_back( var );
+		bodies.push_back( E2->sub[i] );
+
+		// 2. Replace the argument expression with the let var.
+		E2->sub[i] = var;
+	    }
+	}
+
+	return let_expression(vars, bodies, object_ptr<const expression>(E2));
+    }
+
+    // 4. Constructor or Operation
     if (E.head().is_a<constructor>() or E.head().is_a<Operation>())
     {
 	int var_index = get_safe_binder_index(E);
