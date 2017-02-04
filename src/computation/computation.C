@@ -73,6 +73,43 @@ const expression_ref& OperationArgs::evaluate_(int slot)
     return evaluate_slot_to_object_(slot);
 }
 
+
+void OperationArgs::evaluate_to_constant(const closure& C)
+{
+    if (C.exp.is_index_var())
+    {
+	int index = C.exp.as_index_var();
+	int r = C.lookup_in_env(index);
+
+	// 1a. Evaluate the reg.
+	const auto& value = evaluate_reg_to_closure(r);
+	// 1b. Put the value on the stack.
+	M.closure_stack.push_back(value);
+    }
+    else if (C.exp.is_atomic())
+	// 2. C. is an atomic value, put it on the stack.
+	M.closure_stack.push_back(C);
+    else
+    {
+	// 3a. Put the closure on the stack. and 
+	M.closure_stack.push_back(C);
+	// 3b. Evaluate it to a constant or index_var
+	evaluate_stack_to_constant_or_index_var();
+
+	if (M.closure_stack.back().exp.is_index_var())
+	{
+	    int index = M.closure_stack.back().exp.as_index_var();
+	    int r = M.closure_stack.back().lookup_in_env(index);
+	    M.closure_stack.pop_back();
+
+	    // 3c. If it evaluates to an index_var, then evaluate the reg.
+	    const auto& value = evaluate_reg_to_closure(r);
+	    // 3d. Put the value on the stack.
+	    M.closure_stack.push_back(value);
+	}
+    }
+}
+
 int OperationArgs::allocate(closure&& C)
 {
     int r = allocate_reg();

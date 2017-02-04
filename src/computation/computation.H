@@ -59,6 +59,10 @@ public:
 
     const expression_ref& evaluate_(int);
 
+    void evaluate_to_constant(const closure& C);
+
+    virtual void evaluate_stack_to_constant_or_index_var() = 0;
+
     int allocate(closure&&);
 
     virtual int allocate_reg();

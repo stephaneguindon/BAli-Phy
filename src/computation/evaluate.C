@@ -94,6 +94,11 @@ class RegOperationArgs: public OperationArgs
 	    return M.access(R3).C;
 	}
 
+    void evaluate_stack_to_constant_or_index_var()
+	{
+	    M.incremental_evaluate_from_call_(S);
+	}
+
 public:
 
     // If we unreference regs that evaluate to a variable, then we unreference p->let q=2 in q
@@ -479,6 +484,11 @@ class RegOperationArgsUnchangeable: public OperationArgs
     const closure& evaluate_reg_to_closure_(int R2)
 	{
 	    return evaluate_reg_to_closure_(R2);
+	}
+
+    void evaluate_stack_to_constant_or_index_var()
+	{
+	    M.incremental_evaluate_from_call_unchangeable();
 	}
 
 public:
