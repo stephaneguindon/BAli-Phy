@@ -19,7 +19,10 @@ const expression_ref& OperationArgs::reference(int slot) const {return current_c
 
 void OperationArgs::evaluate_slot_to_closure(int slot)
 {
-    stack().push_back( evaluate_reg_to_closure(reg_for_slot(slot)) );
+    if (reference(slot).is_index_var())
+	stack().push_back( evaluate_reg_to_closure(reg_for_slot(slot)) );
+    else
+	evaluate_to_constant({reference(slot), current_closure().Env});
 }
 
 void OperationArgs::evaluate_slot_to_closure_(int slot)
