@@ -450,9 +450,7 @@ void reg_heap::incremental_evaluate_from_call_(int S)
 /// These are LAZY operation args! They don't evaluate arguments until they are evaluated by the operation (and then only once).
 class RegOperationArgsUnchangeable: public OperationArgs
 {
-    const int R;
-
-    const closure& current_closure() const {return memory()[R].C;}
+    const closure& current_closure() const {return memory().closure_stack.back();}
 
     bool evaluate_changeables() const {return false;}
 
@@ -487,8 +485,8 @@ public:
 
     RegOperationArgsUnchangeable* clone() const {return new RegOperationArgsUnchangeable(*this);}
 
-    RegOperationArgsUnchangeable(int r, reg_heap& m)
-	:OperationArgs(m),R(r)
+    RegOperationArgsUnchangeable(reg_heap& m)
+	:OperationArgs(m)
 	{ }
 };
 
@@ -568,14 +566,17 @@ int reg_heap::incremental_evaluate_unchangeable_(int R)
 
 	    try
 	    {
-		RegOperationArgsUnchangeable Args(R, *this);
+		closure_stack.push_back( access(R).C );
+		RegOperationArgsUnchangeable Args(*this);
 		closure value = (*O)(Args);
+		closure_stack.pop_back();
 		total_reductions++;
 	
 		set_C(R, std::move(value) );
 	    }
 	    catch (no_context&)
 	    {
+		closure_stack.pop_back();
 		access(R).type = reg::type_t::changeable;
 		return R;
 	    }
