@@ -2,6 +2,10 @@
 #include "expression.H"
 #include "graph_register.H"
 
+std::vector<closure>& OperationArgs::stack() {return M.closure_stack;}
+
+const std::vector<closure>& OperationArgs::stack() const {return M.closure_stack;}
+
 int OperationArgs::reg_for_slot(int slot) const
 {
     int index = reference(slot).as_index_var();
@@ -13,14 +17,14 @@ int OperationArgs::n_args() const {return current_closure().exp.size();}
 
 const expression_ref& OperationArgs::reference(int slot) const {return current_closure().exp.sub()[slot];}
 
-const closure& OperationArgs::evaluate_slot_to_closure(int slot)
+void OperationArgs::evaluate_slot_to_closure(int slot)
 {
-    return evaluate_reg_to_closure(reg_for_slot(slot));
+    stack().push_back( evaluate_reg_to_closure(reg_for_slot(slot)) );
 }
 
-const closure& OperationArgs::evaluate_slot_to_closure_(int slot)
+void OperationArgs::evaluate_slot_to_closure_(int slot)
 {
-    return evaluate_reg_to_closure_(reg_for_slot(slot));
+    stack().push_back( evaluate_reg_to_closure_(reg_for_slot(slot)) );
 }
 
 int OperationArgs::evaluate_slot_no_record(int slot)
@@ -84,28 +88,28 @@ void OperationArgs::evaluate_to_constant(const closure& C)
 	// 1a. Evaluate the reg.
 	const auto& value = evaluate_reg_to_closure(r);
 	// 1b. Put the value on the stack.
-	M.closure_stack.push_back(value);
+	stack().push_back(value);
     }
     else if (C.exp.is_atomic())
 	// 2. C. is an atomic value, put it on the stack.
-	M.closure_stack.push_back(C);
+	stack().push_back(C);
     else
     {
 	// 3a. Put the closure on the stack. and 
-	M.closure_stack.push_back(C);
+	stack().push_back(C);
 	// 3b. Evaluate it to a constant or index_var
 	evaluate_stack_to_constant_or_index_var();
 
-	if (M.closure_stack.back().exp.is_index_var())
+	if (stack().back().exp.is_index_var())
 	{
-	    int index = M.closure_stack.back().exp.as_index_var();
-	    int r = M.closure_stack.back().lookup_in_env(index);
-	    M.closure_stack.pop_back();
+	    int index = stack().back().exp.as_index_var();
+	    int r = stack().back().lookup_in_env(index);
+	    stack().pop_back();
 
 	    // 3c. If it evaluates to an index_var, then evaluate the reg.
 	    const auto& value = evaluate_reg_to_closure(r);
 	    // 3d. Put the value on the stack.
-	    M.closure_stack.push_back(value);
+	    stack().push_back(value);
 	}
     }
 }

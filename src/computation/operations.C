@@ -84,7 +84,9 @@ expression_ref peel_n_lambdas(const expression_ref& E, int n)
 
 closure apply_op(OperationArgs& Args)
 {
-    closure C = Args.evaluate_slot_to_closure(0);
+    Args.evaluate_slot_to_closure(0);
+    closure C = Args.stack().back();
+    Args.stack().pop_back();
     int n_args_given = Args.n_args()-1;
 
     if (not C.exp.head().is_a<lambda2>())
@@ -128,7 +130,9 @@ closure case_op(OperationArgs& Args)
 {
     // Resizing of the memory can occur here, invalidating previously computed pointers
     // to closures.  The *index* within the memory shouldn't change, though.
-    const closure obj = Args.evaluate_slot_to_closure(0);
+    Args.evaluate_slot_to_closure(0);
+    closure obj = Args.stack().back();
+    Args.stack().pop_back();
 
     // Therefore, we must compute this *after* we do the computation above, since
     // we're going to hold on to it.  Otherwise the held reference would become

@@ -119,7 +119,10 @@ extern "C" closure builtin_function_vector_from_list(OperationArgs& Args)
 {
     object_ptr<EVector> v (new EVector);
 
-    const closure* top = &Args.evaluate_slot_to_closure(0);
+    Args.evaluate_slot_to_closure(0);
+    auto C = Args.stack().back();
+    Args.stack().pop_back();
+    const closure* top = &C;
     while(top->exp.size())
     {
 	assert(has_constructor(top->exp,":"));

@@ -45,7 +45,9 @@ extern "C" closure builtin_function_mkArray(OperationArgs& Args)
 
 extern "C" closure builtin_function_arraySize(OperationArgs& Args)
 {
-    int N = Args.evaluate_slot_to_closure(0).exp.size() - 1;
+    Args.evaluate_slot_to_closure(0);
+    int N = Args.stack().back().exp.size() - 1;
+    Args.stack().pop_back();
 
     return {N};
 }
@@ -54,7 +56,9 @@ extern "C" closure builtin_function_getIndex(OperationArgs& Args)
 {
     int n = Args.evaluate(1).as_int();
     // Do this second, so that evaluation of the 1st argument can't call expand_memory afterwards.
-    const closure& C = Args.evaluate_slot_to_closure(0);
+    Args.evaluate_slot_to_closure(0);
+    auto C = Args.stack().back();
+    Args.stack().pop_back();
 
     int N = C.exp.size();
     assert(C.Env.size() == C.exp.size());

@@ -177,7 +177,10 @@ closure Vector_From_List(OperationArgs& Args)
 {
     object_ptr<Box<std::vector<T> > > v (new Box<std::vector<T> >);
 
-    const closure* top = &Args.evaluate_slot_to_closure(0);
+    Args.evaluate_slot_to_closure(0);
+    auto C = Args.stack().back();
+    Args.stack().pop_back();
+    const closure* top = &C;
     while(top->exp.size())
     {
 	assert(has_constructor(top->exp,":"));

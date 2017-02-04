@@ -21,6 +21,10 @@ public:
 
     const reg_heap& memory() const {return M;}
 
+    std::vector<closure>& stack();
+
+    const std::vector<closure>& stack() const;
+
     virtual const closure& current_closure() const = 0;
 
     virtual bool evaluate_changeables() const = 0;
@@ -43,9 +47,9 @@ public:
 
     virtual const closure& evaluate_reg_to_closure_(int) = 0;
 
-    const closure& evaluate_slot_to_closure(int);
+    void evaluate_slot_to_closure(int);
 
-    const closure& evaluate_slot_to_closure_(int);
+    void evaluate_slot_to_closure_(int);
 
     const expression_ref& evaluate_reg_to_object(int);
 
